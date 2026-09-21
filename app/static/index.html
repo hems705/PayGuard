@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PayGuard - Antigravity Voice Engine</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-void: #030712;
+            --glass-bg: rgba(17, 24, 39, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --neon-indigo: #6366f1;
+            --neon-purple: #a855f7;
+            --neon-pink: #ec4899;
+            --neon-emerald: #10b981;
+            --neon-cyan: #06b6d4;
+        }
+
+        body {
+            background-color: var(--bg-void);
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.18) 0%, transparent 60%),
+                radial-gradient(circle at 85% 80%, rgba(168, 85, 247, 0.12) 0%, transparent 50%),
+                radial-gradient(circle at 15% 70%, rgba(6, 182, 212, 0.10) 0%, transparent 50%);
+            color: #f3f4f6;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.6s ease;
+            overflow-x: hidden;
+        }
+
+        /* Glassmorphism Panel */
+        .antigravity-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 28px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 30px rgba(99, 102, 241, 0.08);
+            width: 100%;
+            max-width: 780px;
+        }
+
+        /* Glowing Pill Input Container */
+        .pill-search-container {
+            background: rgba(10, 15, 30, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 9999px;
+            padding: 6px 8px 6px 24px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+
+        .pill-search-container:focus-within {
+            border-color: var(--neon-indigo);
+            box-shadow: 0 0 35px rgba(99, 102, 241, 0.35), 0 0 15px rgba(168, 85, 247, 0.2);
+            background: rgba(15, 23, 42, 0.9);
+        }
+
+        .pill-input {
+            background: transparent;
+            border: none;
+            color: #f8fafc;
+            font-size: 1.1rem;
+            font-weight: 400;
+            outline: none;
+            width: 100%;
+        }
+
+        .pill-input::placeholder {
+            color: #64748b;
+            font-weight: 300;
+        }
+
+        /* Antigravity Gradient Button */
+        .btn-antigravity {
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 14px 28px;
+            border-radius: 9999px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-antigravity:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(168, 85, 247, 0.6);
+            color: white;
+        }
+
+        .mic-btn-icon {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #94a3b8;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .mic-btn-icon:hover {
+            color: #f8fafc;
+            background: rgba(255, 255, 255, 0.15);
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.4);
+        }
+
+        .pulse-mic-antigravity {
+            animation: pulse-ring-antigravity 1.5s infinite;
+            background: rgba(239, 68, 68, 0.2) !important;
+            color: #ef4444 !important;
+            border-color: #ef4444 !important;
+        }
+
+        @keyframes pulse-ring-antigravity {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 20px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        /* Antigravity Passcode Modal */
+        .modal-content-antigravity {
+            background: rgba(15, 23, 42, 0.92);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            border-radius: 28px;
+            box-shadow: 0 0 50px rgba(99, 102, 241, 0.2);
+            color: #f8fafc;
+        }
+
+        .pin-box-antigravity {
+            width: 58px;
+            height: 64px;
+            text-align: center;
+            font-size: 28px;
+            font-weight: 700;
+            background: rgba(3, 7, 18, 0.8);
+            border: 1.5px solid rgba(255, 255, 255, 0.12);
+            color: var(--neon-cyan);
+            border-radius: 14px;
+            margin: 0 6px;
+            transition: all 0.2s ease;
+        }
+
+        .pin-box-antigravity:focus {
+            border-color: var(--neon-purple);
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.5);
+            outline: none;
+            background: rgba(15, 23, 42, 0.9);
+        }
+
+        /* Screen Blink Green Animation */
+        @keyframes antigravityGreenFlash {
+            0% { background-color: #030712; }
+            25% { background-color: #022c22; }
+            50% { background-color: #064e3b; }
+            75% { background-color: #022c22; }
+            100% { background-color: #030712; }
+        }
+
+        .flash-green-bg {
+            animation: antigravityGreenFlash 1.2s ease-in-out 2;
+        }
+
+        .brand-badge {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(168, 85, 247, 0.15));
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            color: #c084fc;
+            padding: 6px 16px;
+            border-radius: 9999px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+<body class="py-5">
+    <div class="container d-flex justify-content-center">
+        <div class="antigravity-card p-5 text-center">
+            
+            <!-- Header -->
+            <div class="mb-4">
+                <h1 class="fw-extrabold text-white mt-2 mb-1" style="letter-spacing: -1px; font-weight: 800;">PayGuard</h1>
+                <p class="text-secondary fw-light" style="font-size: 1.05rem;">Voice-to-Action Financial Ledger with Passcode Protection</p>
+            </div>
+
+
+            <!-- Antigravity Pill Voice Search Bar -->
+            <div class="row justify-content-center mb-3">
+                <div class="col-12">
+                    <div class="pill-search-container d-flex align-items-center">
+                        <i class="fa-solid fa-sparkles text-indigo me-3 fs-5" style="color: #818cf8;"></i>
+                        <input type="text" id="cmd-input" class="pill-input" placeholder="Say 'Send 500 rs to Rahul'..." value="">
+                        <div class="d-flex align-items-center gap-2 ms-2">
+                            <div class="mic-btn-icon" id="mic-btn" onclick="toggleSpeechRecognition()" title="Voice Input">
+                                <i class="fa-solid fa-microphone"></i>
+                            </div>
+                            <button class="btn btn-antigravity" type="button" onclick="submitVoiceCommand()">
+                                Send <i class="fa-solid fa-arrow-right ms-2"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dynamic Result Card -->
+            <div id="status-alert" class="d-none mx-auto text-start"></div>
+        </div>
+    </div>
+
+    <!-- Passcode Confirmation Modal Popup -->
+    <div class="modal fade" id="passcodeModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content modal-content-antigravity p-4 text-center">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold text-info"><i class="fa-solid fa-shield-keyhole me-2 text-cyan"></i>Security Passcode Required</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body my-3">
+                    <p class="fs-5 fw-semibold text-light mb-2" id="modal-prompt-text">Do you want to send ₹500.00 to Bob?</p>
+                    <p class="text-secondary small mb-4">Enter your 4-digit passcode to authorize transaction</p>
+                    
+                    <div class="d-flex justify-content-center mb-4">
+                        <input type="password" maxlength="1" class="pin-box-antigravity" id="pin1" onkeyup="moveFocus(1, 2)">
+                        <input type="password" maxlength="1" class="pin-box-antigravity" id="pin2" onkeyup="moveFocus(2, 3)">
+                        <input type="password" maxlength="1" class="pin-box-antigravity" id="pin3" onkeyup="moveFocus(3, 4)">
+                        <input type="password" maxlength="1" class="pin-box-antigravity" id="pin4" onkeyup="moveFocus(4, null)">
+                    </div>
+
+                    <div id="modal-error" class="text-danger small d-none mb-3 fw-semibold">Incorrect passcode. Try again.</div>
+
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <button class="btn btn-outline-danger w-100 py-3 fw-bold rounded-4" onclick="cancelPayment()"><i class="fa-solid fa-xmark me-2"></i>Cancel</button>
+                        </div>
+                        <div class="col-6">
+                            <button class="btn btn-antigravity w-100 py-3 fw-bold rounded-4" onclick="confirmPayment()"><i class="fa-solid fa-lock-open me-2"></i>Confirm</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentActionToken = null;
+        let currentRecipientName = "";
+        let currentAmount = "0.00";
+        let passcodeModalObj = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            passcodeModalObj = new bootstrap.Modal(document.getElementById('passcodeModal'));
+            setupDemoAccounts();
+        });
+
+        async function setupDemoAccounts() {
+            await fetch('/accounts/', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id: 'acc_main', name: 'Account Balance', initial_balance: 0.00, passcode: '0909'}) });
+            await fetch('/accounts/acc_main/passcode', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({passcode: '0909'}) });
+        }
+
+
+
+        function toggleSpeechRecognition() {
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                alert('Speech recognition is not supported in this browser. Please type your command.');
+                return;
+            }
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'en-US';
+            const micBtn = document.getElementById('mic-btn');
+            micBtn.classList.add('pulse-mic-antigravity');
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                document.getElementById('cmd-input').value = transcript;
+                micBtn.classList.remove('pulse-mic-antigravity');
+                submitVoiceCommand();
+            };
+            recognition.onerror = () => micBtn.classList.remove('pulse-mic-antigravity');
+            recognition.onend = () => micBtn.classList.remove('pulse-mic-antigravity');
+            recognition.start();
+        }
+
+        async function submitVoiceCommand() {
+            const cmd = document.getElementById('cmd-input').value;
+            if (!cmd || !cmd.trim()) return;
+            document.getElementById('cmd-input').value = '';
+            const alertDiv = document.getElementById('status-alert');
+            alertDiv.classList.add('d-none');
+
+            try {
+                const res = await fetch('/voice/command', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ sender_account_id: 'acc_main', command: cmd })
+                });
+
+                const data = await res.json();
+                if (!res.ok) {
+                    alertDiv.className = 'alert alert-danger bg-danger bg-opacity-20 border-danger p-3 rounded-4 mx-auto text-center mt-4';
+                    alertDiv.innerText = data.detail || 'Failed to parse voice command.';
+                    alertDiv.classList.remove('d-none');
+                    return;
+                }
+
+                currentActionToken = data.action_token;
+                currentRecipientName = data.recipient_name;
+                currentAmount = parseFloat(data.amount).toFixed(2);
+
+                document.getElementById('modal-prompt-text').innerText = data.prompt_text;
+                document.getElementById('modal-error').classList.add('d-none');
+                clearPinInputs();
+
+                if (data.audio_base64) {
+                    new Audio(`data:audio/mp3;base64,${data.audio_base64}`).play();
+                }
+
+                passcodeModalObj.show();
+            } catch (err) {
+                alertDiv.className = 'alert alert-danger bg-danger bg-opacity-20 border-danger p-3 rounded-4 mx-auto text-center mt-4';
+                alertDiv.innerText = 'Network error contacting server.';
+                alertDiv.classList.remove('d-none');
+            }
+        }
+
+        function moveFocus(curr, next) {
+            const val = document.getElementById(`pin${curr}`).value;
+            if (val && next) document.getElementById(`pin${next}`).focus();
+        }
+
+        function clearPinInputs() {
+            ['pin1', 'pin2', 'pin3', 'pin4'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('pin1').focus();
+        }
+
+        function cancelPayment() {
+            passcodeModalObj.hide();
+            currentActionToken = null;
+            const alertDiv = document.getElementById('status-alert');
+            alertDiv.className = 'card bg-danger bg-opacity-20 border-danger p-4 text-center mx-auto shadow-lg mt-4 rounded-4';
+            alertDiv.style.borderColor = '#ef4444';
+            alertDiv.style.background = 'rgba(127, 29, 29, 0.35)';
+            alertDiv.style.backdropFilter = 'blur(16px)';
+            alertDiv.innerHTML = `
+                <div class="fs-4 text-danger mb-2 fw-bold"><i class="fa-solid fa-circle-xmark me-2"></i>Payment Cancelled</div>
+                <h4 class="fw-bold text-light mb-1">Voice transfer of <span class="text-warning">₹${currentAmount}</span> to <span class="text-info">${currentRecipientName}</span> was cancelled.</h4>
+                <div class="small text-secondary mt-2">No money was deducted from your account.</div>
+            `;
+            alertDiv.classList.remove('d-none');
+        }
+
+        async function confirmPayment() {
+
+            const pin = ['pin1', 'pin2', 'pin3', 'pin4'].map(id => document.getElementById(id).value).join('');
+            const errorDiv = document.getElementById('modal-error');
+            errorDiv.classList.add('d-none');
+
+            if (pin.length < 4) {
+                errorDiv.innerText = 'Please enter complete 4-digit passcode.';
+                errorDiv.classList.remove('d-none');
+                return;
+            }
+
+            const res = await fetch('/voice/confirm', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ action_token: currentActionToken, passcode: pin })
+            });
+
+            const data = await res.json();
+            if (!res.ok) {
+                errorDiv.innerText = data.detail || 'Incorrect passcode.';
+                errorDiv.classList.remove('d-none');
+                return;
+            }
+
+            passcodeModalObj.hide();
+
+            // Screen Blink Green Effect
+            document.body.classList.add('flash-green-bg');
+            setTimeout(() => {
+                document.body.classList.remove('flash-green-bg');
+            }, 2500);
+
+            // Display Antigravity Glass Success Card
+            const alertDiv = document.getElementById('status-alert');
+            alertDiv.className = 'card bg-emerald-950 bg-opacity-30 border-emerald p-4 text-center mx-auto shadow-2xl mt-4 rounded-4';
+            alertDiv.style.borderColor = '#10b981';
+            alertDiv.style.background = 'rgba(6, 78, 59, 0.35)';
+            alertDiv.style.backdropFilter = 'blur(16px)';
+
+            alertDiv.innerHTML = `
+                <div class="fs-4 text-emerald-400 text-success mb-2 fw-bold"><i class="fa-solid fa-circle-check me-2"></i>Payment Successful</div>
+                <h2 class="fw-extrabold text-white mb-2" style="font-weight:800;">Sent <span style="color:#fbbf24;">₹${currentAmount}</span> to <span style="color:#38bdf8;">${currentRecipientName}</span></h2>
+                <div class="alert bg-emerald-900 bg-opacity-40 border-0 fw-medium my-3 py-2 px-3 text-emerald-200" style="color:#a7f3d0; border-radius:12px;">
+                    <i class="fa-solid fa-shield-check me-2 text-emerald-400"></i>This transaction has been executed <strong>securely and successfully</strong>.
+                </div>
+                <div class="small text-slate-400 text-secondary">Transaction Reference ID: <code class="text-cyan">${data.transaction_reference_id}</code></div>
+            `;
+            alertDiv.classList.remove('d-none');
+
+            if (data.audio_base64) {
+                new Audio(`data:audio/mp3;base64,${data.audio_base64}`).play();
+            }
+        }
+    </script>
+</body>
+</html>
