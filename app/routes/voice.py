@@ -100,11 +100,138 @@ def parse_voice_command(command: str) -> Tuple[Decimal, str]:
 
 
 
+def detect_voice_intent(command: str) -> str:
+    """
+    Determines intent from command:
+    - 'BALANCE_QUERY'
+    - 'LAST_TRANSACTION'
+    - 'TRANSFER'
+    """
+    clean_cmd = command.strip().lower()
+
+    # Balance Query patterns
+    balance_patterns = [
+        r"\b(show|tell|check|get|what('s| is)?|display|view)?\s*(me\s+)?(my\s+|the\s+)?(current\s+|available\s+|account\s+)?balance\b",
+        r"\bhow much (money|balance|cash|funds)\b",
+        r"\bbalance inquiry\b"
+    ]
+    for pattern in balance_patterns:
+        if re.search(pattern, clean_cmd):
+            # Exclude if it looks like an explicit money transfer
+            if not re.search(r"\b(send|transfer|pay|give)\b.+\b(to|for|into)\b", clean_cmd):
+                return "BALANCE_QUERY"
+
+    # Last Transaction patterns
+    tx_patterns = [
+        r"\b(show|tell|check|get|what('s| is| was)?|display|view)?\s*(me\s+)?(my\s+|the\s+)?(last|latest|recent|previous|past)\s+(transaction|transfer|payment|activity)\b",
+        r"\blast transaction( i made)?\b",
+        r"\brecent transactions?\b",
+        r"\blast payment\b"
+    ]
+    for pattern in tx_patterns:
+        if re.search(pattern, clean_cmd):
+            return "LAST_TRANSACTION"
+
+    return "TRANSFER"
+
+
 @router.post("/command", response_model=schemas.VoiceCommandResponse)
 def process_voice_command(
     req: schemas.VoiceCommandRequest,
     db: Session = Depends(get_db)
 ):
+    sender = db.query(models.Account).filter(models.Account.id == req.sender_account_id).first()
+    if not sender:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Sender account '{req.sender_account_id}' not found."
+        )
+
+    intent = detect_voice_intent(req.command)
+
+    # 1. BALANCE QUERY INTENT
+    if intent == "BALANCE_QUERY":
+        s_credits = db.query(func.coalesce(func.sum(models.LedgerEntry.amount), 0)).filter(
+            models.LedgerEntry.account_id == sender.id,
+            models.LedgerEntry.entry_type == models.EntryType.CREDIT
+        ).scalar() or Decimal("0.00")
+
+        s_debits = db.query(func.coalesce(func.sum(models.LedgerEntry.amount), 0)).filter(
+            models.LedgerEntry.account_id == sender.id,
+            models.LedgerEntry.entry_type == models.EntryType.DEBIT
+        ).scalar() or Decimal("0.00")
+
+        balance = Decimal(str(s_credits)) - Decimal(str(s_debits))
+        prompt_text = f"Your current available balance is ₹{balance:,.2f}."
+        audio_b64 = elevenlabs_service.generate_speech_audio(prompt_text)
+
+        return schemas.VoiceCommandResponse(
+            action_type="BALANCE_QUERY",
+            prompt_text=prompt_text,
+            balance=balance,
+            audio_base64=audio_b64
+        )
+
+    # 2. LAST TRANSACTION INTENT
+    if intent == "LAST_TRANSACTION":
+        last_entry = db.query(models.LedgerEntry).filter(
+            models.LedgerEntry.account_id == sender.id
+        ).order_by(models.LedgerEntry.created_at.desc()).first()
+
+        if not last_entry:
+            prompt_text = "You have no past transactions recorded."
+            audio_b64 = elevenlabs_service.generate_speech_audio(prompt_text)
+            return schemas.VoiceCommandResponse(
+                action_type="LAST_TRANSACTION",
+                prompt_text=prompt_text,
+                transaction_details=None,
+                audio_base64=audio_b64
+            )
+
+        party_name = "Unknown"
+        if last_entry.entry_type == models.EntryType.DEBIT:
+            paired_entry = db.query(models.LedgerEntry).filter(
+                models.LedgerEntry.reference_id == last_entry.reference_id,
+                models.LedgerEntry.entry_type == models.EntryType.CREDIT
+            ).first()
+            if paired_entry:
+                rec_acc = db.query(models.Account).filter(models.Account.id == paired_entry.account_id).first()
+                if rec_acc:
+                    party_name = rec_acc.name
+            tx_type_str = f"transfer of ₹{last_entry.amount:,.2f} to {party_name}"
+        else:
+            paired_entry = db.query(models.LedgerEntry).filter(
+                models.LedgerEntry.reference_id == last_entry.reference_id,
+                models.LedgerEntry.entry_type == models.EntryType.DEBIT
+            ).first()
+            if paired_entry:
+                snd_acc = db.query(models.Account).filter(models.Account.id == paired_entry.account_id).first()
+                if snd_acc:
+                    party_name = snd_acc.name
+                tx_type_str = f"received payment of ₹{last_entry.amount:,.2f} from {party_name}"
+            else:
+                tx_type_str = f"credit/deposit of ₹{last_entry.amount:,.2f}"
+
+        prompt_text = f"Your last transaction was a {tx_type_str}."
+        audio_b64 = elevenlabs_service.generate_speech_audio(prompt_text)
+
+        tx_details = {
+            "reference_id": last_entry.reference_id,
+            "amount": str(last_entry.amount),
+            "entry_type": last_entry.entry_type.value,
+            "party_name": party_name,
+            "created_at": last_entry.created_at.isoformat()
+        }
+
+        return schemas.VoiceCommandResponse(
+            action_type="LAST_TRANSACTION",
+            prompt_text=prompt_text,
+            amount=last_entry.amount,
+            transaction_details=tx_details,
+            audio_base64=audio_b64
+        )
+
+    # 3. TRANSFER INTENT
     # Parse Command
     amount, recipient_query = parse_voice_command(req.command)
 

@@ -83,6 +83,32 @@ def set_account_passcode(
     return to_account_response(account)
 
 
+@router.post("/{account_id}/deposit", response_model=schemas.LedgerEntryResponse)
+def deposit_funds(
+    account_id: str,
+    deposit_in: schemas.DepositRequest,
+    db: Session = Depends(get_db)
+):
+    account = db.query(models.Account).filter(models.Account.id == account_id).first()
+    if not account:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Account '{account_id}' not found."
+        )
+
+    entry = models.LedgerEntry(
+        id=f"entry_{uuid.uuid4().hex[:12]}",
+        account_id=account_id,
+        amount=deposit_in.amount,
+        entry_type=models.EntryType.CREDIT,
+        reference_id=f"dep_{uuid.uuid4().hex[:12]}"
+    )
+    db.add(entry)
+    db.commit()
+    db.refresh(entry)
+    return entry
+
+
 @router.get("/{account_id}", response_model=schemas.AccountResponse)
 def get_account(account_id: str, db: Session = Depends(get_db)):
     account = db.query(models.Account).filter(models.Account.id == account_id).first()

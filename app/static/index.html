@@ -271,11 +271,22 @@
         });
 
         async function setupDemoAccounts() {
-            await fetch('/accounts/', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id: 'acc_main', name: 'Account Balance', initial_balance: 0.00, passcode: '0909'}) });
-            await fetch('/accounts/acc_main/passcode', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({passcode: '0909'}) });
+            try {
+                await fetch('/accounts/', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id: 'acc_main', name: 'Account Balance', initial_balance: 0.00, passcode: '0909'}) });
+            } catch (_) {}
+            try {
+                await fetch('/accounts/acc_main/passcode', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({passcode: '0909'}) });
+            } catch (_) {}
         }
 
-
+        function playSpeech(audioB64, text) {
+            if (audioB64) {
+                new Audio(`data:audio/mp3;base64,${audioB64}`).play();
+            } else if ('speechSynthesis' in window && text) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                window.speechSynthesis.speak(utterance);
+            }
+        }
 
         function toggleSpeechRecognition() {
             if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
@@ -321,6 +332,49 @@
                     return;
                 }
 
+                // Balance Query Result
+                if (data.action_type === 'BALANCE_QUERY') {
+                    alertDiv.className = 'card p-4 text-center mx-auto shadow-2xl mt-4 rounded-4';
+                    alertDiv.style.borderColor = '#6366f1';
+                    alertDiv.style.background = 'rgba(30, 27, 75, 0.55)';
+                    alertDiv.style.backdropFilter = 'blur(20px)';
+                    alertDiv.innerHTML = `
+                        <div class="d-inline-flex align-items-center gap-2 px-3 py-1 mb-2 rounded-pill mx-auto" style="background: rgba(99, 102, 241, 0.2); border: 1px solid rgba(99, 102, 241, 0.4);">
+                            <i class="fa-solid fa-wallet" style="color: #818cf8;"></i>
+                            <span class="small fw-semibold" style="color: #c7d2fe;">Current Available Balance</span>
+                        </div>
+                        <h1 class="fw-extrabold my-2" style="font-size: 2.5rem; color: #34d399 !important; letter-spacing: -0.5px;">₹${Number(data.balance).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h1>
+                        <p class="text-secondary small mb-0">${data.prompt_text}</p>
+                    `;
+                    alertDiv.classList.remove('d-none');
+                    playSpeech(data.audio_base64, data.prompt_text);
+                    return;
+                }
+
+                // Last Transaction Query Result
+                if (data.action_type === 'LAST_TRANSACTION') {
+                    alertDiv.className = 'card p-4 text-center mx-auto shadow-2xl mt-4 rounded-4';
+                    alertDiv.style.borderColor = '#a855f7';
+                    alertDiv.style.background = 'rgba(59, 7, 100, 0.55)';
+                    alertDiv.style.backdropFilter = 'blur(20px)';
+                    alertDiv.innerHTML = `
+                        <div class="d-inline-flex align-items-center gap-2 px-3 py-1 mb-2 rounded-pill mx-auto" style="background: rgba(168, 85, 247, 0.2); border: 1px solid rgba(168, 85, 247, 0.4);">
+                            <i class="fa-solid fa-receipt" style="color: #c084fc;"></i>
+                            <span class="small fw-semibold" style="color: #e9d5ff;">Last Transaction Details</span>
+                        </div>
+                        <h3 class="fw-bold text-white my-3">${data.prompt_text}</h3>
+                        ${data.transaction_details && data.transaction_details.reference_id ? `
+                            <div class="d-flex justify-content-center align-items-center gap-3 text-secondary small mt-2">
+                                <span>Reference: <code class="text-info">${data.transaction_details.reference_id}</code></span>
+                            </div>
+                        ` : ''}
+                    `;
+                    alertDiv.classList.remove('d-none');
+                    playSpeech(data.audio_base64, data.prompt_text);
+                    return;
+                }
+
+                // Transfer Flow
                 currentActionToken = data.action_token;
                 currentRecipientName = data.recipient_name;
                 currentAmount = parseFloat(data.amount).toFixed(2);
@@ -329,9 +383,7 @@
                 document.getElementById('modal-error').classList.add('d-none');
                 clearPinInputs();
 
-                if (data.audio_base64) {
-                    new Audio(`data:audio/mp3;base64,${data.audio_base64}`).play();
-                }
+                playSpeech(data.audio_base64, data.prompt_text);
 
                 passcodeModalObj.show();
             } catch (err) {
@@ -417,9 +469,7 @@
             `;
             alertDiv.classList.remove('d-none');
 
-            if (data.audio_base64) {
-                new Audio(`data:audio/mp3;base64,${data.audio_base64}`).play();
-            }
+            playSpeech(data.audio_base64, data.response_text);
         }
     </script>
 </body>

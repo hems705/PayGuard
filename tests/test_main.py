@@ -300,6 +300,62 @@ def test_voice_command_nil_balance():
     assert "Insufficient funds" in res.json()["detail"]
 
 
+def test_voice_command_balance_query():
+    client.post("/accounts/", json={
+        "name": "Balance Checker",
+        "id": "acc_bal_checker",
+        "initial_balance": "1000000.00",
+        "passcode": "1234"
+    })
+
+    # Test "show me the current balance"
+    res1 = client.post("/voice/command", json={
+        "sender_account_id": "acc_bal_checker",
+        "command": "show me the current balance"
+    })
+    assert res1.status_code == 200
+    data1 = res1.json()
+    assert data1["action_type"] == "BALANCE_QUERY"
+    assert float(data1["balance"]) == 1000000.00
+    assert "1,000,000.00" in data1["prompt_text"]
+
+    # Test "what is my balance"
+    res2 = client.post("/voice/command", json={
+        "sender_account_id": "acc_bal_checker",
+        "command": "what is my balance"
+    })
+    assert res2.status_code == 200
+    assert res2.json()["action_type"] == "BALANCE_QUERY"
+
+
+def test_voice_command_last_transaction():
+    # 1. User with no prior transactions
+    client.post("/accounts/", json={
+        "name": "New User",
+        "id": "acc_new_tx",
+        "passcode": "1234"
+    })
+    no_tx_res = client.post("/voice/command", json={
+        "sender_account_id": "acc_new_tx",
+        "command": "show me the last transaction i made"
+    })
+    assert no_tx_res.status_code == 200
+    assert no_tx_res.json()["action_type"] == "LAST_TRANSACTION"
+    assert "no past transactions" in no_tx_res.json()["prompt_text"]
+
+    # 2. Add deposit / transaction and verify last transaction
+    client.post("/accounts/acc_new_tx/deposit", json={"amount": "750.00"})
+    tx_res = client.post("/voice/command", json={
+        "sender_account_id": "acc_new_tx",
+        "command": "show me the last transaction i made"
+    })
+    assert tx_res.status_code == 200
+    tx_data = tx_res.json()
+    assert tx_data["action_type"] == "LAST_TRANSACTION"
+    assert float(tx_data["amount"]) == 750.00
+    assert "750.00" in tx_data["prompt_text"]
+
+
 
 
 

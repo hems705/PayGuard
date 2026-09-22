@@ -26,6 +26,10 @@ class PasscodeSetRequest(BaseModel):
     passcode: str = Field(..., min_length=4, max_length=6, description="4-6 digit passcode")
 
 
+class DepositRequest(BaseModel):
+    amount: Decimal = Field(..., gt=0, decimal_places=2, description="Deposit amount (must be positive)")
+
+
 class TransactionCreate(BaseModel):
     source_account_id: str = Field(..., description="ID of the source account (debited)")
     destination_account_id: str = Field(..., description="ID of the destination account (credited)")
@@ -66,12 +70,15 @@ class VoiceCommandRequest(BaseModel):
 
 
 class VoiceCommandResponse(BaseModel):
-    action_token: str
+    action_type: str = "TRANSFER"
+    action_token: Optional[str] = None
     prompt_text: str
-    recipient_name: str
-    amount: Decimal
+    recipient_name: Optional[str] = None
+    amount: Optional[Decimal] = None
+    balance: Optional[Decimal] = None
+    transaction_details: Optional[dict] = None
     audio_base64: Optional[str] = None
-    expires_at: datetime.datetime
+    expires_at: Optional[datetime.datetime] = None
 
 
 class VoiceConfirmRequest(BaseModel):

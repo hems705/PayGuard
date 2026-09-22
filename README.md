@@ -83,6 +83,7 @@ Open:
 - `POST /accounts/` — Create an account
 - `GET /accounts/{account_id}` — Retrieve an account
 - `POST /accounts/{account_id}/passcode` — Set or replace a passcode
+- `POST /accounts/{account_id}/deposit` — Deposit funds into an account
 - `GET /accounts/{account_id}/balance` — Retrieve balance totals
 - `GET /accounts/{account_id}/entries` — Retrieve ledger entries
 
@@ -93,18 +94,13 @@ Open:
 
 For safe retries, send an `Idempotency-Key` header with `POST /transactions/`.
 
-### Voice payments
+### Voice Payments & Queries
 
 1. `POST /voice/command` with a sender account and natural-language command.
-2. PayGuard returns a temporary action token and confirmation prompt.
-3. `POST /voice/confirm` with the action token and passcode.
-4. The transfer is completed only after successful passcode validation.
-
-Example command:
-
-```text
-Send 500 rs to Rahul
-```
+2. Supports actions and queries:
+   - **Transfers**: `Send 500 rs to Rahul` (returns temporary action token, requires `POST /voice/confirm` with passcode)
+   - **Balance Inquiries**: `Show me the current balance`, `What is my balance`
+   - **Transaction Inquiries**: `Show me the last transaction I made`
 
 ## Running Tests
 
